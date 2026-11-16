@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300..800&family=Geist+Mono:wght@400;500&display=block">
+<style>html,body{margin:0;background:#0a0a0a;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas></canvas>
+<script src="shared.js"></script>
+<script>
+// Chiglel — route study. Schematic: the stop layout is generated, the two
+// distances (176.7 km in visiting order, 89.7 km optimised) and the building
+// counts (4,335 → 23,287) are the project's recorded figures.
+const ctx = setup();
+const MAP = { x: 40, y: 96, w: 820, h: 664 };
+
+// A tilted street grid, like a city block plan.
+const r = rng(7);
+const buildings = [];
+for (let i = 0; i < 1400; i += 1) {
+  const gx = Math.floor(r() * 26);
+  const gy = Math.floor(r() * 21);
+  buildings.push({
+    x: MAP.x + 20 + gx * 30 + r() * 18,
+    y: MAP.y + 20 + gy * 30 + r() * 18,
+    // Only ~19% were searchable before (4,335 of 23,287).
+    early: r() < 0.186,
+    at: r(),
+  });
+}
+
+const depot = { x: MAP.x + 90, y: MAP.y + MAP.h - 90 };
+const stops = [];
+const rs = rng(31);
+while (stops.length < 14) {
+  const p = { x: MAP.x + 70 + rs() * (MAP.w - 140), y: MAP.y + 60 + rs() * (MAP.h - 120) };
+  if (stops.every((q) => Math.hypot(p.x - q.x, p.y - q.y) > 95) && Math.hypot(p.x - depot.x, p.y - depot.y) > 110) stops.push(p);
+}
+
+// Visiting order as entered (naive) vs. nearest neighbour + 2-opt.
+const naive = [depot, ...stops, depot];
+function length(path) {
+  let d = 0;
+  for (let i = 1; i < path.length; i += 1) d += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+  return d;
+}
+function optimise() {
+  const left = stops.slice();
+  const path = [depot];
+  while (left.length) {
+    const last = path[path.length - 1];
+    let best = 0;
+    for (let i = 1; i < left.length; i += 1) {
+      if (Math.hypot(left[i].x - last.x, left[i].y - last.y) < Math.hypot(left[best].x - last.x, left[best].y - last.y)) best = i;
+    }
+    path.push(left.splice(best, 1)[0]);
+  }
+  path.push(depot);
+  let improved = true;
+  while (improved) {
+    improved = false;
+    for (let i = 1; i < path.length - 2; i += 1) {
+      for (let k = i + 1; k < path.length - 1; k += 1) {
+        const next = path.slice(0, i).concat(path.slice(i, k + 1).reverse(), path.slice(k + 1));
+        if (length(next) < length(path) - 0.01) {
+          path.splice(0, path.length, ...next);
+          improved = true;
+        }
+      }
+    }
+  }
+  return path;
+}
+const best = optimise();
+
+/** Draws the first `p` (0..1) of a polyline; returns the head point. */
+function drawPath(path, p, style, dash = []) {
+  const total = length(path);
+  let budget = total * p;
+  ctx.save();
+  Object.assign(ctx, style);
+  ctx.setLineDash(dash);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(path[0].x, path[0].y);
+  let head = path[0];
+  for (let i = 1; i < path.length && budget > 0; i += 1) {
+    const a = path[i - 1];
+    const b = path[i];
+    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+    const f = Math.min(1, budget / seg);
+    head = { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+    ctx.lineTo(head.x, head.y);
+    budget -= seg;
+  }
+  ctx.stroke();
+  ctx.restore();
+  return head;
+}
+
+window.render = (t) => {
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(0, 0, W, H);
+  chrome(ctx, "Chiglel · route study", "Schematic · Ulaanbaatar");
+
+  // Map frame + grid.
+  ctx.fillStyle = "#0f0f0f";
+  ctx.fillRect(MAP.x, MAP.y, MAP.w, MAP.h);
+  ctx.strokeStyle = "#1b1b1b";
+  ctx.lineWidth = 1;
+  for (let x = MAP.x + 15; x < MAP.x + MAP.w; x += 30) {
+    ctx.beginPath(); ctx.moveTo(x, MAP.y); ctx.lineTo(x, MAP.y + MAP.h); ctx.stroke();
+  }
+  for (let y = MAP.y + 15; y < MAP.y + MAP.h; y += 30) {
+    ctx.beginPath(); ctx.moveTo(MAP.x, y); ctx.lineTo(MAP.x + MAP.w, y); ctx.stroke();
+  }
+
+  // Buildings: the searchable set grows from 4,335 to 23,287.
+  const grow = easeInOut(span(t, 0.3, 2.4));
+  for (const b of buildings) {
+    const on = b.early || b.at < grow;
+    ctx.fillStyle = on ? (b.early ? "#5a5a5a" : "#3b3b3b") : "#191919";
+    ctx.fillRect(b.x, b.y, 4, 4);
+  }
+
+  // Stops.
+  for (const [i, s] of stops.entries()) {
+    ctx.fillStyle = C.ink;
+    ctx.strokeStyle = C.bone;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.font = mono(10, 500);
+    ctx.fillStyle = C.bone;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(i + 1), s.x, s.y + 0.5);
+  }
+  ctx.fillStyle = C.ember;
+  ctx.fillRect(depot.x - 9, depot.y - 9, 18, 18);
+  label(ctx, "Depot", depot.x + 18, depot.y + 5, C.ember, 12);
+
+  // 1) As entered: dashed ash route.
+  const pNaive = easeInOut(span(t, 1.2, 3.6));
+  const fadeNaive = 1 - 0.75 * span(t, 4.2, 5);
+  ctx.globalAlpha = fadeNaive;
+  drawPath(naive, pNaive, { strokeStyle: C.ash, lineWidth: 2 }, [8, 7]);
+  ctx.globalAlpha = 1;
+
+  // 2) Optimised: solid ember route with a travelling head.
+  const pBest = easeInOut(span(t, 4.0, 6.2));
+  if (pBest > 0) {
+    ctx.save();
+    ctx.shadowColor = C.ember;
+    ctx.shadowBlur = 14;
+    const head = drawPath(best, pBest, { strokeStyle: C.ember, lineWidth: 3.5 });
+    ctx.restore();
+    if (pBest < 1) {
+      ctx.fillStyle = C.bone;
+      ctx.beginPath(); ctx.arc(head.x, head.y, 6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Side panel: the recorded figures.
+  const px = 900;
+  label(ctx, "Searchable buildings", px, 128);
+  const count = Math.round(lerp(4335, 23287, grow));
+  big(ctx, count.toLocaleString("en-US"), px, 214, 92);
+  label(ctx, "4,335 → 23,287 · 5.4x", px, 244, C.ash, 13);
+
+  ctx.fillStyle = C.line;
+  ctx.fillRect(px, 290, 340, 1);
+
+  label(ctx, "14-stop test route", px, 334);
+  let km = 0;
+  if (t < 4) km = 176.7 * pNaive;
+  else km = lerp(176.7, 89.7, pBest);
+  big(ctx, `${km.toFixed(1)}`, px, 440, 120, t >= 4 ? C.ember : C.bone);
+  label(ctx, "km", px + 4, 472, C.ash, 15);
+
+  const cut = span(t, 6.2, 6.6);
+  if (cut > 0) {
+    ctx.globalAlpha = cut;
+    ctx.fillStyle = C.ember;
+    ctx.fillRect(px, 520, 186, 64);
+    big(ctx, "−49%", px + 14, 574, 58, C.ink);
+    ctx.globalAlpha = 1;
+  }
+
+  label(ctx, "As entered", px, 650, C.ash, 13);
+  ctx.fillStyle = C.ash; ctx.fillRect(px + 150, 645, 40, 2);
+  label(ctx, "Optimised", px, 680, C.ash, 13);
+  ctx.fillStyle = C.ember; ctx.fillRect(px + 150, 674, 40, 4);
+  label(ctx, "PostGIS · OSRM", px, 740, C.ash, 13);
+
+  loopFade(ctx, t);
+};
+</script>
+</body>
+</html>

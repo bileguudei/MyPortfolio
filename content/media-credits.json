@@ -1,0 +1,65 @@
+{
+  "kuma": {
+    "kind": "collage",
+    "source": "Project campaign posters: assets/work/kuma/05-duel.png, assets/work/kuma/01-reveal.png, assets/work/kuma/11-tutor-ask.png",
+    "reel": {
+      "kind": "clip",
+      "source": "Kuma/marketing-video/out/kuma-promo-1920x1080.mp4"
+    },
+    "loop": {
+      "kind": "clip",
+      "source": "Kuma/marketing-video/out/hero-1920x1200.mp4"
+    }
+  },
+  "reelscaption": {
+    "kind": "screenshot",
+    "source": "https://reelscaption.com",
+    "captured": "2026-11-13",
+    "reel": {
+      "kind": "clip",
+      "source": "mongol-reels-creator-studio-mvp/marketing-video/out/reelscaption-launch-film-16x9.mp4"
+    },
+    "loop": {
+      "kind": "mockup",
+      "source": "Device mockup: generated studio plate scripts/mockups/plates/reelscaption.png, screen footage mongol-reels-creator-studio-mvp/marketing-video/out/reelscaption-launch-film-16x9.mp4"
+    }
+  },
+  "chiglel": {
+    "kind": "plate",
+    "source": "Typographic plate rendered by scripts/capture-work.mjs",
+    "reel": {
+      "kind": "clip",
+      "source": "chiglel-marketing-video/out/chiglel-promo-1920x1080.mp4"
+    },
+    "loop": {
+      "kind": "clip",
+      "source": "chiglel-marketing-video/out/hero-1920x1200.mp4"
+    }
+  },
+  "minigift": {
+    "kind": "screenshot",
+    "source": "https://minigift.online",
+    "captured": "2026-11-13",
+    "reel": {
+      "kind": "story",
+      "source": "https://minigift.online/demo?templateId=floral-love",
+      "captured": "2026-11-15"
+    },
+    "loop": {
+      "kind": "study",
+      "source": "Loop composed from the floral-love template's own flower art (scripts/reels/minigift.html)"
+    }
+  },
+  "driver-drowsiness": {
+    "kind": "plate",
+    "source": "Typographic plate rendered by scripts/capture-work.mjs",
+    "reel": {
+      "kind": "clip",
+      "source": "fatigueguard-marketing-video/out/fatigueguard-promo-1920x1080.mp4"
+    },
+    "loop": {
+      "kind": "mockup",
+      "source": "Device mockup: generated studio plate scripts/mockups/plates/driver-drowsiness.png, screen footage fatigueguard-marketing-video/out/hero-screen-1170x2532.mp4"
+    }
+  }
+}

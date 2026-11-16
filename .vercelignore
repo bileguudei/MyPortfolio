@@ -1,0 +1,15 @@
+# Not needed to build or serve the site.
+node_modules
+.next
+.claude
+.impeccable
+test-results
+playwright-report
+tests
+tsconfig.tsbuildinfo
+# The full-size source photo and its mask: only the derived files in
+# public/portrait are ever served.
+assets
+# Local secrets (vercel link writes an OIDC token here)
+.env*
+.vercel

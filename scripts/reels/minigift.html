@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html,body{margin:0;background:#f7f0de;overflow:hidden}canvas{display:block}
+</style>
+</head>
+<body>
+<canvas></canvas>
+<script src="shared.js"></script>
+<script>
+// MiniGift's painted bloom, without the gift's interface. The only imagery is
+// the original template atlas and small paper/petal crops from its own sheets.
+// Capture contract: await ready, then render(seconds), in any order.
+window.LOOP = 12;
+const ctx = setup();
+const TAU = Math.PI * 2;
+const GOLDEN = 2.399963229728653;
+const mix = (a, b, p) => a + (b - a) * p;
+const smooth = v => {
+  const p = Math.max(0, Math.min(1, v));
+  return p * p * p * (p * (p * 6 - 15) + 10);
+};
+const paths = {
+  flowers: 'assets/minigift/flowers.webp',
+  paper: 'assets/minigift/paper.webp',
+  petalCream: 'assets/minigift/petal-cream.webp',
+  petalBurgundy: 'assets/minigift/petal-burgundy.webp',
+  petalRose: 'assets/minigift/petal-rose.webp',
+};
+const art = {};
+const sprites = [];
+let paperPattern;
+let decoded = false;
+
+// Seeded once, never advanced by render(). Each flower has three depths and
+// follows its own reversible path, rather than depending on prior frames.
+const seed = rng(9417);
+const flowerTypes = Array.from({length: 77}, (_, i) => i % 12);
+const shuffle = rng(2819);
+for (let i = flowerTypes.length - 1; i > 0; i--) {
+  const j = Math.floor(shuffle() * (i + 1));
+  [flowerTypes[i], flowerTypes[j]] = [flowerTypes[j], flowerTypes[i]];
+}
+const flowers = Array.from({length: 77}, (_, i) => {
+  const col = i % 11;
+  const row = Math.floor(i / 11);
+  const turn = i * GOLDEN + 0.14;
+  const radius = Math.sqrt((i + 0.7) / 77);
+  const hx = 16 * Math.sin(turn) ** 3 * radius;
+  const hy = -(13 * Math.cos(turn) - 5 * Math.cos(2 * turn)
+    - 2 * Math.cos(3 * turn) - Math.cos(4 * turn)) * radius;
+  const depth = i % 3;
+  return {
+    sprite: flowerTypes[i],
+    depth,
+    // Slightly staggered, overlapping rows make an edge-to-edge flower wall.
+    x0: 32 + col * 121 + (row % 2 ? 23 : -9) + (seed() - 0.5) * 27,
+    y0: 18 + row * 128 + (seed() - 0.5) * 31,
+    // The source bloom's golden-angle heart, tightened for a portrait crop.
+    x1: 641 + hx * 14.3 + hy * 0.67,
+    y1: 374 + hy * 14.1,
+    s0: 191 + seed() * 43,
+    s1: 91 + seed() * 31 + depth * 3,
+    r0: (seed() - 0.5) * 0.48,
+    r1: (seed() - 0.5) * 1.12,
+    phase: seed() * TAU,
+    bend: (seed() - 0.5) * 45,
+    stagger: seed() * 0.46,
+  };
+}).sort((a, b) => a.depth - b.depth);
+
+// Cropped blooms remain in the margins while the main field gathers. These
+// are behind the heart, so there is always painted material beyond its edge.
+const margins = [
+  [-38, 74, 258, 0], [142, -50, 216, 3], [359, -84, 213, 4],
+  [884, -72, 225, 7], [1120, -34, 252, 1], [1300, 161, 256, 3],
+  [-55, 359, 239, 7], [1318, 437, 274, 0],
+  [-4, 744, 273, 1], [218, 846, 244, 3], [442, 895, 221, 4],
+  [876, 891, 238, 7], [1108, 839, 264, 0], [1330, 773, 254, 3],
+].map(([x, y, size, sprite], i) => ({x, y, size, sprite, phase: i * GOLDEN}));
+
+const petals = Array.from({length: 9}, (_, i) => ({
+  x: 177 + ((i * 149) % 958),
+  y: 80 + ((i * 211) % 680),
+  size: 15 + (i % 4) * 4,
+  phase: i * GOLDEN,
+  sprite: ['petalCream', 'petalBurgundy', 'petalRose'][i % 3],
+}));
+
+function sprite(index, x, y, size, rotation, opacity = 1) {
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.drawImage(sprites[index], -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+function background(gather) {
+  // Original opening cream and rose, with the original stationery's fibers.
+  const a = [247, 240, 222];
+  const b = [237, 181, 193];
+  const tint = gather * 0.68;
+  ctx.fillStyle = `rgb(${a.map((v, i) => Math.round(mix(v, b[i], tint))).join(',')})`;
+  ctx.fillRect(0, 0, W, H);
+  if (paperPattern) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.31;
+    ctx.fillStyle = paperPattern;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+window.render = function render(seconds) {
+  // Explicit normalization makes 12 exactly the same frame as 0, including
+  // floating-point transforms, and also permits negative or out-of-order t.
+  const t = ((seconds % LOOP) + LOOP) % LOOP;
+  const angle = t / LOOP * TAU;
+  const gather = smooth((t - 0.55) / 4.05) * (1 - smooth((t - 7.15) / 4.25));
+  background(gather);
+  if (!decoded) return;
+
+  margins.forEach(p => {
+    sprite(p.sprite,
+      p.x + Math.sin(angle + p.phase) * 9,
+      p.y + Math.cos(angle + p.phase) * 7,
+      p.size * (1 + Math.sin(angle + p.phase) * 0.012),
+      Math.sin(p.phase) * 0.42 + Math.sin(angle + p.phase) * 0.025,
+      0.78);
+  });
+
+  flowers.forEach(p => {
+    const g = smooth((t - 0.55 - p.stagger) / 3.8)
+      * (1 - smooth((t - 7.15 + p.stagger * 0.6) / 4.1));
+    const depth = 0.55 + p.depth * 0.26;
+    const breath = Math.sin(angle * 2 - 0.7) * 0.014 * g;
+    const px = Math.sin(angle) * (7 + p.depth * 3);
+    const py = Math.cos(angle) * (3 + p.depth * 2);
+    const bend = Math.sin(angle) * Math.sin(g * Math.PI) * p.bend;
+    const x = mix(p.x0, p.x1, g) + (p.x1 - 640) * breath
+      + Math.sin(angle + p.phase) * 3.6 * depth + px + bend;
+    const y = mix(p.y0, p.y1, g) + (p.y1 - 390) * breath
+      + Math.cos(angle + p.phase) * 3 * depth + py;
+    const size = mix(p.s0, p.s1, g) * (1 + breath)
+      * (1 + Math.sin(angle + p.phase) * 0.008);
+    const rotation = mix(p.r0, p.r1, g)
+      + Math.sin(angle + p.phase) * 0.029 * depth;
+    sprite(p.sprite, x, y, size, rotation);
+  });
+
+  // A few real, isolated petals on slow elliptical paths. No respawning,
+  // alpha ramps or wrapping particles that could pop at the loop seam.
+  petals.forEach(p => {
+    const x = p.x + Math.sin(angle + p.phase) * 28;
+    const y = p.y + Math.cos(angle + p.phase) * 39;
+    const image = art[p.sprite];
+    const h = p.size * image.height / image.width;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(p.phase + Math.sin(angle + p.phase) * 0.55);
+    ctx.scale(0.88 + Math.cos(angle + p.phase) * 0.12, 1);
+    ctx.globalAlpha = 0.88;
+    ctx.drawImage(image, -p.size / 2, -h / 2, p.size, h);
+    ctx.restore();
+  });
+};
+
+window.ready = Promise.all(Object.entries(paths).map(async ([name, src]) => {
+  const image = new Image();
+  image.src = src;
+  await image.decode();
+  art[name] = image;
+})).then(() => {
+  // Bake the source's soft, offset shadow once, outside the frame renderer.
+  // An atlas cell is 313.5px, so fractional source rectangles are intentional.
+  const cell = art.flowers.width / 4;
+  for (let i = 0; i < 12; i++) {
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = 384;
+    const paint = tile.getContext('2d');
+    paint.shadowColor = 'rgba(75,41,42,0.13)';
+    paint.shadowOffsetY = 10;
+    paint.shadowBlur = 15;
+    paint.drawImage(art.flowers,
+      (i % 4) * cell, Math.floor(i / 4) * cell, cell, cell,
+      12, 6, 360, 360);
+    sprites.push(tile);
+  }
+  // Mirror the existing paper crop to remove tile seams without new texture.
+  const paper = art.paper;
+  const tile = document.createElement('canvas');
+  tile.width = paper.width * 2;
+  tile.height = paper.height * 2;
+  const paint = tile.getContext('2d');
+  for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+    paint.save();
+    paint.translate(x ? tile.width : 0, y ? tile.height : 0);
+    paint.scale(x ? -1 : 1, y ? -1 : 1);
+    paint.drawImage(paper, 0, 0);
+    paint.restore();
+  }
+  paperPattern = ctx.createPattern(tile, 'repeat');
+  decoded = true;
+  render(0);
+});
+</script>
+</body>
+</html>

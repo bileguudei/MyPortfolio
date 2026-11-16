@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "title": "Bileguudei Ijilmurun — Full-Stack Software Engineer",
+    "titleTemplate": "%s — Bileguudei Ijilmurun",
+    "description": "Full-stack software engineer in Ulaanbaatar. Web and mobile products with React, Next.js, React Native and PostgreSQL — built end to end, then measured."
+  },
+  "nav": {
+    "skip": "Skip to content",
+    "home": "Bileguudei Ijilmurun — home",
+    "primary": "Primary",
+    "work": "Work",
+    "about": "About",
+    "contact": "Contact",
+    "menu": "Menu",
+    "close": "Close",
+    "menuTitle": "Site menu",
+    "language": "Language",
+    "english": "English",
+    "mongolian": "Mongolian"
+  },
+  "hero": {
+    "role": "Full-Stack Software Engineer",
+    "intro": "One year of hands-on experience building web and mobile applications end to end and shipping them to production.",
+    "ctaWork": "See the work",
+    "ctaContact": "Get in touch",
+    "scroll": "Scroll",
+    "based": "Ulaanbaatar, Mongolia",
+    "portraitPending": "Portrait pending",
+    "drag": "Drag to spin",
+    "portraitAlt": "Portrait of Bileguudei Ijilmurun",
+    "asideA": "Web · Mobile · Backend",
+    "asideB": "Selected work",
+    "asideC": "05 projects, 2026"
+  },
+  "manifesto": {
+    "label": "Approach",
+    "body": "I have worked on a wide range of projects: AI-powered SaaS, education, logistics and interactive platforms. I take part in every stage of development, from frontend to backend, and care about clean architecture, high performance and user experience."
+  },
+  "work": {
+    "label": "Selected work",
+    "open": "Open case",
+    "listLabel": "Selected projects",
+    "reel": {
+      "film": "Promo film",
+      "site": "Live site",
+      "study": "Motion study · schematic",
+      "demo": "Template demo · Floral love story",
+      "app": "App promo",
+      "art": "Template art · Floral love story"
+    },
+    "mockup": "device mockup"
+  },
+  "about": {
+    "label": "About",
+    "title": "A software engineer who solves real problems with code.",
+    "bio": "In software development I care about more than features that work: system architecture, performance, reliability and code quality matter just as much. I fix technical problems at their root cause and build solutions that are easy to maintain and extend.\n\nI have worked on products that are live with real users, building experience across frontend, backend and system integration. I pick up new technologies quickly and enjoy putting them to work on real problems.",
+    "experience": "Experience",
+    "education": "Education",
+    "internship": "Internship project · Driver Drowsiness Detection"
+  },
+  "stack": {
+    "label": "Toolbox",
+    "title": "What I work with.",
+    "groups": {
+      "languages": "Languages",
+      "frontend": "Frontend & mobile",
+      "backend": "Backend",
+      "data": "Data & cloud",
+      "ai": "AI & reliability"
+    }
+  },
+  "archive": {
+    "label": "Archive",
+    "title": "More builds."
+  },
+  "contact": {
+    "label": "Contact",
+    "titleA": "Have a product",
+    "titleB": "to ship?",
+    "body": "For a role, a project, or a question about anything here — email is the fastest way to reach me.",
+    "copy": "Copy email",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "write": "Write to me",
+    "github": "GitHub"
+  },
+  "footer": {
+    "rights": "© {year} Bileguudei Ijilmurun",
+    "top": "Back to top",
+    "local": "Ulaanbaatar"
+  },
+  "case": {
+    "back": "All work",
+    "index": "Case {current} of {total}",
+    "type": "Type",
+    "year": "Year",
+    "context": "Context",
+    "status": "Status",
+    "links": "Links",
+    "visit": "Visit {site}",
+    "source": "Source on GitHub",
+    "outcome": "Outcome",
+    "built": "What I built",
+    "stack": "Stack",
+    "next": "Next case"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Nothing here.",
+    "body": "This page does not exist or has moved.",
+    "back": "Back to home"
+  }
+}
